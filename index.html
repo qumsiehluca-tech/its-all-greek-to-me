@@ -1,0 +1,795 @@
+<!doctype html><html lang="en"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>It's all Greek to me</title>
+<meta name="description" content="A daily word game. Greek letters that look like English ones: spell as many words as you can from the bin.">
+<meta property="og:title" content="It's all Greek to me">
+<meta property="og:description" content="A daily word game played with look-alike Greek letters.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#1847C2">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%231847C2'/%3E%3Ctext x='50' y='72' font-size='64' text-anchor='middle' fill='white' font-family='serif' font-weight='bold'%3E%CE%A9%3C/text%3E%3C/svg%3E"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cardo:wght@400;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one board (mode switch, spelling row, bin, controls) beside a ledger (Greek-alphabet rank, found words, share); stacks on phones. Aegean cobalt on chalk, carved-tile letters, one Greek wave band. */
+:root {
+  --bg: #EEF2F9;
+  --surface: #FFFFFF;
+  --ink: #0D1A3A;
+  --muted: #56648A;
+  --line: #D2DAEA;
+  --accent: #1847C2;
+  --accent-ink: #FFFFFF;
+  --tile: #F6F8FD;
+  --tile-edge: #B4C1DD;
+  --good: #0E7A5A;
+  --bad: #B3261E;
+  --font-display: 'Cardo', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  --font-body: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A1128;
+    --surface: #101A38;
+    --ink: #E9EEFF;
+    --muted: #94A2CB;
+    --line: #233055;
+    --accent: #7AA2FF;
+    --accent-ink: #0A1128;
+    --tile: #17234C;
+    --tile-edge: #304175;
+    --good: #46D6A8;
+    --bad: #FF8F86;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0A1128;
+  --surface: #101A38;
+  --ink: #E9EEFF;
+  --muted: #94A2CB;
+  --line: #233055;
+  --accent: #7AA2FF;
+  --accent-ink: #0A1128;
+  --tile: #17234C;
+  --tile-edge: #304175;
+  --good: #46D6A8;
+  --bad: #FF8F86;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 16px/1.55 var(--font-body);
+  padding-inline: 16px;
+  padding-block: 24px 56px;
+}
+.app { max-width: 980px; margin-inline: auto; display: grid; gap: 20px; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* header */
+.head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 24px; }
+h1 { margin: 0; font: 700 clamp(1.7rem, 5vw, 2.1rem)/1.15 var(--font-display); letter-spacing: -0.005em; text-wrap: balance; }
+.meta { margin: 0; font: 400 0.85rem/1.5 var(--font-mono); color: var(--muted); }
+.intro { margin: 0; max-width: 60ch; color: var(--muted); font-size: 0.95rem; }
+.intro .gk { font-family: var(--font-display); font-weight: 700; color: var(--accent); font-size: 1.1em; }
+
+/* stage */
+.stage { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 800px) {
+  .stage { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; gap: 36px; }
+}
+.board { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.eyebrow { margin: 0; font: 600 0.72rem/1.4 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+
+.modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; max-width: 460px; }
+.mode { min-height: 48px; padding: 6px 10px; background: var(--surface); border: 0; border-right: 1px solid var(--line); cursor: pointer; text-align: left; display: grid; align-content: center; }
+.mode:last-child { border-right: 0; }
+.mode b { font: 600 0.9rem/1.3 var(--font-body); }
+.mode span { font: 400 0.7rem/1.3 var(--font-mono); color: var(--muted); }
+.mode:hover:not([aria-pressed="true"]) { background: var(--tile); }
+.mode[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.mode[aria-pressed="true"] span { color: var(--accent-ink); opacity: 0.85; }
+
+.composer { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; max-width: 460px; container-type: inline-size; }
+.composer.shake { animation: shake 0.28s; }
+@keyframes shake { 20% { transform: translateX(-5px); } 45% { transform: translateX(5px); } 70% { transform: translateX(-3px); } 100% { transform: none; } }
+.slot {
+  aspect-ratio: 1 / 1.12;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: min(6.4cqw, 1.9rem);
+  line-height: 1;
+  color: var(--accent);
+}
+.slot.on { border: 1px solid var(--tile-edge); background: var(--tile); box-shadow: 0 2px 0 var(--tile-edge); }
+
+.readout { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 1.9rem; max-width: 460px; }
+.latin { font: 600 1.15rem/1.4 var(--font-mono); letter-spacing: 0.16em; overflow-wrap: anywhere; min-width: 0; }
+.latin.empty::before { content: 'Spell a word'; font-weight: 400; letter-spacing: 0.02em; font-size: 0.95rem; color: var(--muted); font-family: var(--font-body); }
+.wpts { font: 600 1rem/1.4 var(--font-mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.msg { margin: 0; min-height: 1.6em; font-size: 0.95rem; color: var(--muted); max-width: 460px; }
+.msg.good { color: var(--good); }
+.msg.bad { color: var(--bad); }
+
+.rack { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; max-width: 460px; container-type: inline-size; }
+.tile {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--tile-edge);
+  border-radius: 6px;
+  background: var(--tile);
+  color: var(--accent);
+  box-shadow: 0 3px 0 var(--tile-edge);
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.tile .g { font-family: var(--font-display); font-weight: 700; font-size: min(11cqw, 3rem); line-height: 1; }
+.tile .l, .tile .p { position: absolute; bottom: 6px; font: 600 0.7rem/1 var(--font-mono); color: var(--muted); }
+.tile .l { left: 8px; text-transform: uppercase; }
+.tile .p { right: 8px; font-variant-numeric: tabular-nums; }
+.tile:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--tile-edge); }
+
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 8px; max-width: 460px; }
+.btn {
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+
+/* ledger: plain text, no boxes */
+.ledger { display: grid; gap: 28px; min-width: 0; }
+.ledger section { display: grid; gap: 10px; min-width: 0; }
+.rankname { margin: 0; display: flex; align-items: baseline; gap: 10px; font-weight: 600; }
+.rankname .g { font: 700 1.6rem/1 var(--font-display); color: var(--accent); min-width: 1.2em; }
+.alpha { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2px; }
+.alpha span { text-align: center; font: 400 1.05rem/1.7 var(--font-display); color: var(--muted); opacity: 0.45; border-radius: 3px; }
+.alpha span.on { color: var(--accent); opacity: 1; font-weight: 700; }
+.alpha span.cur { background: var(--accent); color: var(--accent-ink); }
+.small { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.stats, .count { margin: 0; font-size: 0.95rem; color: var(--muted); }
+.stats b, .count b { font: 600 0.95rem var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+.found { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow: auto; }
+.found li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: baseline; gap: 12px; padding: 4px 0; }
+.found .w { font-weight: 600; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.found .tag { margin-left: 8px; font: 600 0.65rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.found .gk { font: 400 1.1rem/1.2 var(--font-display); color: var(--muted); }
+.found .pt { font: 600 0.95rem var(--font-mono); font-variant-numeric: tabular-nums; min-width: 2ch; text-align: right; }
+.found li.best .pt { color: var(--accent); }
+.link { justify-self: start; padding: 4px 0; border: 0; background: none; color: var(--muted); font-size: 0.9rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.link:hover:not(:disabled) { color: var(--accent); }
+.link:disabled { opacity: 0.4; cursor: default; text-decoration: none; }
+.share { margin: 0; font: 400 0.9rem/1.6 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.share-row { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.how { color: var(--muted); font-size: 0.9rem; }
+.how summary { cursor: pointer; }
+.how-body { display: grid; gap: 10px; margin-top: 10px; max-width: 64ch; }
+.how p { margin: 0; }
+.how .map b { color: var(--ink); font-weight: 600; }
+.how .map .g { font-family: var(--font-display); font-weight: 700; color: var(--accent); }
+.rack.nolabels .l { display: none; }
+/* Keystone: a disc for the required letter, ringed by the others */
+.rack.dial { display: block; max-width: 340px; container-type: normal; }
+.rack.dial svg { display: block; width: 100%; height: auto; user-select: none; -webkit-user-select: none; }
+.dial .seg { cursor: pointer; outline: none; }
+.dial .seg path { fill: var(--tile); stroke: var(--surface); stroke-width: 4; stroke-linejoin: round; transition: fill 0.1s; }
+.dial .seg:hover path { fill: var(--line); }
+.dial .seg:active path { fill: var(--accent); }
+.dial .seg:active .sg, .dial .seg:active .sl { fill: var(--accent-ink); }
+.dial .seg:focus-visible path { stroke: var(--accent); stroke-width: 3; }
+.dial .seg circle { fill: var(--accent); stroke: var(--surface); stroke-width: 3; transition: opacity 0.1s; }
+.dial .seg.centre:hover circle { opacity: 0.88; }
+.dial .seg.centre:focus-visible circle { stroke: var(--ink); }
+.dial .rim { fill: none; stroke: var(--accent); stroke-width: 3; pointer-events: none; }
+.dial .sg { font-family: var(--font-display); font-weight: 700; font-size: 38px; fill: var(--accent); pointer-events: none; }
+.dial .sl { font: 600 9.5px var(--font-mono); letter-spacing: 0.04em; fill: var(--muted); pointer-events: none; }
+.dial .centre .sg { fill: var(--accent-ink); }
+.dial .centre .sl { fill: var(--accent-ink); opacity: 0.85; font-size: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .composer.shake { animation: none; }
+  .tile { transition: none; }
+}
+</style>
+
+
+<div class="app">
+  <header class="head">
+    <h1>It's all Greek to me</h1>
+    <p class="meta"><span id="dayno">No. 1</span> · <span id="daydate"></span></p>
+  </header>
+  <p class="intro">Greek letters that look like English ones: <span class="gk" lang="el">Η</span> is H, <span class="gk" lang="el">ρ</span> is p, <span class="gk" lang="el">ς</span> is s. Use each tile as often as you like.</p>
+
+  <main class="stage">
+    <section class="board" aria-label="Today's bin">
+      <h2 class="eyebrow">Mode</h2>
+      <div class="modes" id="modes" role="group" aria-label="Difficulty">
+        <button type="button" class="mode" data-mode="easy" data-ctl aria-pressed="true"><b>Easy</b><span>CAPS, 12</span></button>
+        <button type="button" class="mode" data-mode="medium" data-ctl aria-pressed="false"><b>Medium</b><span>lower, 10</span></button>
+        <button type="button" class="mode" data-mode="hard" data-ctl aria-pressed="false"><b>Hard</b><span>lower, 8</span></button>
+        <button type="button" class="mode" data-mode="keystone" data-ctl aria-pressed="false"><b>Keystone</b><span>lower, 6</span></button>
+      </div>
+      <div class="composer" id="composer" aria-hidden="true"></div>
+      <div class="readout"><span class="latin empty" id="latin"></span><span class="wpts" id="wpts"></span></div>
+      <p class="msg" id="msg" role="status" aria-live="polite">Tap tiles or type on your keyboard. Enter submits.</p>
+      <div class="rack" id="rack" role="group" aria-label="Bin tiles"></div>
+      <div class="controls">
+        <button type="button" class="btn" id="delBtn" data-ctl>Delete</button>
+        <button type="button" class="btn" id="clearBtn" data-ctl>Clear</button>
+        <button type="button" class="btn" id="shuffleBtn" data-ctl>Shuffle</button>
+        <button type="button" class="btn primary" id="submitBtn" data-ctl>Submit</button>
+      </div>
+    </section>
+
+    <aside class="ledger">
+      <section aria-label="Rank">
+        <p class="rankname"><span class="g" id="rankGlyph" lang="el">·</span><span id="rankName">Find a word to start climbing</span></p>
+        <div class="alpha" id="alpha" aria-hidden="true"></div>
+        <p class="stats" id="stats"></p>
+      </section>
+      <section aria-label="Found words">
+        <p class="count"><b id="foundCount">0</b> of <b id="totalCount">0</b> words <span id="remain"></span></p>
+        <ul class="found" id="found"></ul>
+        <p class="small" id="foundEmpty">No words yet. Three letters is the minimum.</p>
+        <button type="button" class="link" id="giveBtn" data-ctl>Give up</button>
+      </section>
+      <section id="bestSec" aria-label="Best words" hidden>
+        <p class="count">Best words in this bin</p>
+        <ul class="found" id="bestList"></ul>
+      </section>
+      <section aria-label="Share">
+        <pre class="share" id="shareText"></pre>
+        <p class="share-row"><button type="button" class="link" id="copyBtn" data-ctl>Copy result</button><span class="small" id="copyNote" role="status" aria-live="polite"></span></p>
+      </section>
+    </aside>
+  </main>
+
+  <details class="how">
+    <summary>How it works</summary>
+    <div class="how-body">
+      <p>Letters are matched by how they look, not how they sound. Lowercase sigma is ς only at the end of a word, so S can only finish a word there. Capitals have no S.</p>
+      <p class="map" id="mapCaps"></p>
+      <p class="map" id="mapLow"></p>
+      <p>Points: A E I N O S T U score 2, H M P 4, B K V W Y 6, X and Z 10. A letter used again in the same word scores half. Your rank follows your total points, from Omega at the bottom up to Beta. Alpha is different: find any one of the five highest-scoring words in the bin and it's yours, whatever else you found.</p>
+      <p>Every daily bin can spell at least 30% of the common words its letters allow. Hard is 15%, because even the best 8 letters spell under 29%.</p>
+      <p>Keystone has six tiles, never more than three of them vowels. The centre tile has to be in every word, words need four letters or more, and a word that uses all six tiles earns +10.</p>
+    </div>
+  </details>
+</div>
+
+<script>
+var VALID_STR="aah aas abas abate abatement abates abatis abaya abayas abbas abbe abbey abbeys abbot abbots abbs abeam abet abetment abets abeyant abo abominate about abouts above abs abut abuts aby aeon aeons aha ahem ahi ahoy aia aias aim aine ains ait akas ake akimbo akin akita amah amain amaze amazement amazon amazonian ambient ambit ambition ambo ameba amen amenity ament amenta amia amin amine amino amity ammo ammon ammonia ammonite amnion amniote amoeba amoebae amok amp amphibia amphibian anaemia anan anana ananas anata anathema anatomize anatomy anatta ane anemia anemone anent anes anew anima animate animation anime anion anions anis ankh annas annatto annex annexation annexe annexes anno annotate annotation annoy annoys anns annuitant annuities annuity anoa anoint anointment anoints anomie anon anonym anonymity anonymize anoxia ant anta ante antenna antennae antennas antes anthem anti antient antimony antinomian antinomy antipathy antiphon antiphony antipope antis antitank antitoxin antitype antivenin antonym ants anus anxieties anxiety anxious any anyon anyone anyones anytime anyway anyways apathy apatite ape apes apex apexes apian apnea apnoea apo apos app appetite appetites appetitive appoint appointee appointees appointive appoints apps apt apts ataman ataxia ate ates athame atma atman atom atomize atone atonement atones atony atop atopy attaboy attain attainment attains attempt attention attentions attentive attenuate attenuates attune atua aua aue auk auks aune aunt auntie aunties aunts aunty auto autobus autos autotune auxin avant avanti avas ave avens avenue avenues avian avians aviate aviation avion avo avos avow awa await awaits awake awaken awakens awakes away aways awe awes awk awn awoke awoken axe axeman axemen axes axiom axion axis axon axons ayah aye ayes ayin ays ayu azan azo azote azotemia baa baas baba babas babbitt babe babes babies babka baboo baboon baboons babu babus baby bae baes bah baht bait baits baize bake bakes bam bambini bambino bamboo ban banana bananas bane banes bani bania banian banias bank bankbook banknote banknotes banks banns bans bant bantam bants bantus banya banyan banzai baobab baobabs bap baps baptize bapu bat batata batavia batboy bate bateau bateaux bath bathe bathmat batik batmen baton batons bats batt batta batten battens batts battuta batty bauxite bawn bay baye bayonet bayonets bayou bayous bays bayt bazooka beak beaks beaky beam beamy bean beanie beanies beano beans beany beat beatbox beaten beath beatnik beatniks beats beaty beau beaus beaut beauteous beauties beauts beauty beaux bebop bee beebee been beep beeps bees beet beets behemoth bekah bema bemoan bene beneath benes beni benne bennet bennets benni bennies bennis bens bent bento bentonite bentos bents benzene benzine benzoate benzoin bes bet beta betaine betas bete bethink betoken beton bets betties between betweens betwixt bevvy bevy bey beys bez bhai bhakta bhakti bhat bias bib bibb bibbs bibs bike bikes bikeway bikeways bikie bikini bikinis bima bimbo bin bine bines binks bins bint bio biobank biome bios biota biotin biotite biotope biotopes biotype bioweapon bioweapons bipinnate bis bit bite bites bitmap bits bitt bitte bitten bitties bitty biz bizzy boa boak boas boat boatman boatmen boats bob boba bobbies bobbin bobbins bobbitt bobs boet boh bohemian boho boi boink boinks bois boite bok boke bokeh boks boma bomb bombe bombo bonanza bonbon bonbons bone bones boney bonham bonhomie bonito bonk bonks bonne bonnes bonnet bonnets bonnies bonny bonobo bonobos bonus bony boo boob boobie boobies booboo boobs booby boohoo book bookie bookies bookman books booky boom boombox boomy boon boonies boons boos boot booth bootie booties boots booty booze boozy bop bops bot bota botany botas bote botes both bothy botnet botnets bots bott bottom botts botty boun bounteous bounties bounty bout bouton bouts bovine bovines bow bowes bowknot bowne bows box boxes boxy boy boyo boyos boys bozo buat bub buba bubba bubbas bubby bubo bubs bubu bukkake bun buna bunion bunions bunk bunko bunks bunn bunnies bunny buns bunt bunts bunty bunyip buoy buoyant buoys bus but butane bute butene buts butt butte buttes butties button buttons butts butty buy buyout buyouts buys bwana bye byes byname bys byte bytes byway byways ean eat eaten eath eats eau eaux eave eaves ebb ebbets ebbs ebon ebonite ebony ebook ebooks eek een eikon eine eke ekes ekka emanate emanation embankment embayment eme eminent emit emmet emo emote emotion empathize empathy empt emption empty empyema enema enemy enes enews enmity ennui enoki enow ens entamoeba entente entities entity entomb entombment entwine envies envious envoy envoys envy enzyme eon eons epee ephah epiphany epiphyte epitaph epitaxy epithet epitome epitomize epitope epitopes eponym epos epoxies epoxy eta etas etat etats eth ethane ethene etna etui etymon eve even evens event events eventuate eves evite evo evoke evokes evos ewe ewes exabytes exam examen examine examinee exempt exemption exes exhibit exhibition exit exits exo exon exons expat expatiate expats expiate expiation expo exponent exponents expos extant extent extents extenuate exuviae eye eyes habit habitant habitat habitation haem haematite haematoma hah haha haik hain haka hakam hake hakeem hakim ham hamate hambone hame hammam hammy hamza hamzah hankie hanky hao haoma hap happen happy hat hatbox hate hath hatha hatpin hay hazan haze hazmat hazy heap heat heath heathen heathy heh heinie hem hematite hematoma heme hemin hemp hempen hen henbane henbit henna henny hep hepatoma heptane hete heth hetman hex hexane hey hie hike him hin hinky hinny hint hip hipbone hippie hippo hippy hit hitman hitmen hiya hmm hoatzin hoax hob hobbit hobby hobnob hobo hoe hoh hoi hoke hokey hoki hom homa home homeboy homeobox homeopath homeopathy homey homie hominin hominy homme homo homonym homonymy homophobe homophobia homophone homophony hon honan hone honey honeybee honeymoon honeypot honk honkey honky hoo hooey hook hookah hookey hooky hoon hoop hoopoe hoot hootenanny hop hope hoppy hot hotbox hote hotpot hottie hotty hox hoya hyaena hyena hymen hymn hymnbook hyp hype hypha hyphae hyphen hyphenate hyphy hypnotize hypo hypomania hypotonia hypoxemia hypoxia hythe iamb ibex ibis ikan ikat ikebana ikon imam imamate imbibe imbibition imine imitate imitation immanent imminent immy imp impatient impenitent impi impiety impotent inane inanimate inanities inanity inapt inbox inboxes inept inhabit inhabitant inhibit inhibition inion initiate initiates initiation initiative ink inks inky inmate inn innate innit innovate innovates innovation innovative inns inpatient inpatients input inputs ins intake intakes intent intention intentions intents inti intima intimate intimation intime into intonation intone intones intown intubate intubation intuit intuition intuitions intuitive invent invention inventions inventive invents invitation invite invitee invitees invites invoke invokes ion ionization ionize ions iota ippon itas item itemize its ivies ivy iwi izzat kaaba kaas kab kabab kabaka kabob kabobs kabuki kae kais kaizen kak kaka kakapo kaki kame kameez kamikaze kana kanae kanaka kanban kanes kans kantha kaon kapa kapok kappa kappas kaput kas katakana katana katanas katas kathak kats kava kaw kawa kaws kayak kayaks kayo kays kazi kazoo kea kebab kebabs keek keema keen keens keep keeps keet kemp kempt ken kennet keno kens kente kents kep kepi kept ket keta ketamine keto ketone ketones kets kewpie key keynote keynotes keys keyway khaki khanate khat khi kibbe kibe kike kikes kikuyu kimbo kimono kin kina kine kines kink kinks kinky kino kins kip kippa kipps kips kis kit kite kites kith kits kitten kittens kitties kittiwake kittiwakes kitty kiva kivas kiwi kiwis knap knave knaves knee knees knew knit knits knives knob knobby knobs knop knot knots knotty knout know knowe known knowns knows koa koan koans kob kobo koha kohen koi koine kois koka kokanee kon kook kookie kooks kooky kop kops koto kow kowtow kue kuku kuna kune kuta kuti kwaito kyanite kyat kye kyne kyte kyu maa mabe maha mahatma maik maiko maim main maintain maize make maki mako mama mamba mambo mamma mammon mammoth mammy man mana manakin manana manatee mane mani mania manikin manito mankini manky manna mannan mano manta manto many manzanita map mat matai matata mate matey math matin matinee matte maty matzah matzo matzoh max maxi maxim maxima maximin maximize may maybe mayhap mayhem mayo maze mazy mean meanie meant meantime meany meat meath meaty meek meet meh mein mekka mem meme memento memo men mene meno menta mentation mentee mention mento met meta metanoia metazoan mete meth methane methionine methoxy metonymy meze mezz mezzanine mezze mezzo mezzotint mho mien mihi mim mime mimeo mine mini minim minima minimax minimize minion mink minke mino mint minty minx miny minyan mite mitt mitten mix mixtape miz mizen mizz mizzen mna moa moai moan moat mob moiety moke moki moko mom mome moment momenta momento momi momma mommy monazite monetize money monie monk monkey mono monoamine monokini monomania monotone monotony monotype montane monteith month mony moo mooi mook moon moonbeam moony moot mop mopane mope mopey moppet mote moten motet moth moti motion motmot motte motto moxie moy moya moz moze mozo mozz mozzie myna mynah myoma myopathy myopia myth myxoma mzee naam naan nab nabe nabis nabob nabs nae nah naik nain naive naivete naivety nam name namma nan nana nanas nane nanite nanites nankeen nankin nanna nannies nanny nanobots nanook nanotube nanotubes nans naos nap nape napes naphtha napkin napkins nappa nappe nappes nappies nappy naps natation nates nation nations native natives nativities nativity nats natty nave naves navies navvies navvy navy nawab nawabs nay nays neap neat neath neb nebs neem nek nekton nema nene neon neonate neonates neons neophyte nep net netizen nets nett neuk neve neves nevi nevus new newbie newbies news newt newton newtons newts next nexus nib nibs nie nies nieve nieves nikah nim nine ninepins nines nineteen nineteenth nineties ninetieth ninety ninny ninon ninth nip nipa nippy nips nis nit nite nites nits nitty nitwit nitwits nix nixes nizam nob nobby nobs noes noh noma nomen nomina nominate nomination nominee non nonbank none nonempty nonentity nones nonexempt nonis nonnative nonny nonpayment nonpoint nonunion nonwoven nonwovens noo noob noobs nook nookie nooks noon noons noontime nope nos not nota notate notation notations note notebook notebooks notes notion notions notitia nott noun nouns nous nouveau nouveaux nova novae novas novation novena novitiate now noway nows nowt nowy noxious noy nub nubbin nubby nubs nuke nukes nun nuns nus nut nutation nuts nutty nyanza nymph nymphet nympho nys oak oaken oaks oaky oat oaten oath oats oba obas obe obeah obes obey obeys obi obis obit obits obnoxious obo oboe oboes obovate obs obtain obtainment obtains obviate obviates obvious oes ohm oho oik oink ointment oka okapi okay okays oke okeh okes okta omen omit omnipotent one ones onetime onion onions onos onto onus ony onyx oom oompah oomph oon oops oos oot ooze oozy opah ope open opens opes opiate opiates opine opines opinion opinions oppo opponent opponents ops opt optative optima optimize option options opts opus otaku otitis ottoman ottos ouabain oup ous out outbox outpatient output outputs outs outtake outtakes outvote outwit outwits ova ovate ovation ovations oven ovens ovine owe owes own owns owt oxbow oxen oxime oxo oxy oye oyez oys ozeki ozone paan paean paeans pah pahoehoe paik pain pains paint paintbox paints pais pakeha pakka pampa pan pane panes panettone panini paninis panko panne pans pant pantheon pantie panties panto pantomime panton pants panty pap papa papain papas papaw papaya papayas pape papes pappi pappus pappy paps pas pat pate paten patens patent patentee patents pates path pathname patient patients patin patina patio patios patois patootie pats patte pattee patten pattie patties patty paty paua pav pavan pavane pave paves pavin pavis pavone paw pawn pawns pawpaw paws pax pay payee payees payment payout payouts payphone pays pea peahen peak peaks peaky pean peanut peanuts peas peat peats peaty peavey peavy peba pee peek peekaboo peeks peen peep peeps pees peeve peeves peewee peh pein pekan peke pekin pekoe pembina pen pene peni penis penitent penitents penman penna pennant pennants penne pennies pennine pennon penny pens pent pentane peon peonies peons peony pep pepino pepo peppy peps peptone pet petabyte petabytes petit petite petites petition petitions pets petti petty petunia petunias pew pewee pews peyote phaeton phantom phat phenix phenom phenomena phenomenon phenotype phenytoin phi phiz pho phobia phoenix phon phonation phone phoneme phoney phono phonon phony phooey phot photo photon pian piano pianos pias piazza pie pieman pies piet pieta pieties piety piezo pika pikas pike pikemen pikes pikey pimento pimiento pimp pin pina pinakothek pinas pinata pinatas pine pinene pines piney pinion pinions pink pinkeye pinkie pinkies pinko pinks pinky pinna pinnae pinnate pinny pinon pinots pinpoint pinpoints pins pint pinta pinto pintos pints pinup pinups pinyin pinyon pion pions pious pip pipa pipe pipes pipette pipettes pipi pipit pipits pipkin pippin pippins pippy pips pis pit pita pitahaya pitas piteous pith pithy pities pitman piton pitons pits pitta pity piu pivot pivots pix pixie pixies pixy pizazz pizza pizzazz poem poet poets poh poi point pointe pointes points pointy pois poke pokes pokey pokie pokies poky pom pombe pome pommy pomp pompano pompom pompon pone ponies ponk pons pontes pontianak pontine ponton pontoon pontoons ponts ponty pony poo pook pooka poon poop poops poopy poos poot poots pop pope popes poppa poppet poppies poppy pops pot potato potatoes pote poteen potent potentate potentates potentiate potes potion potions potpie pots pott potties potto potty pout poutine pouts pouty pow pows powwow powwows pox poxy poz ptomaine pub pube pubes pubis pubs puka puke pukes pukka pun puna punitive punk punkin punks punky punnet punny puns punt punto puntos punts puny pup pupa pupae pupate pupation puppet puppets puppies puppy pups pupu pus put putative puts putt putten putti putties putts putty puy pwn pye pyin pyne python pyx pyxis tab tabbies tabby tabes tabi taboo taboos tabs tabu tabun taenia taha tahini taiko tain taint taints taipan taipans tais taka take takeaway takeaways taken takeout takes taki takis taks tam tame tamp tampon tan tane tank tanka tankini tanks tanky tanna tannin tannins tannoy tans tanti tanto tanuki tanzanite tao taos tap tapa tapas tape tapes tapis tappet tappets taps tapu tat tatami tates tatou tats tatt tattie tatties tattoo tattoos tatts tatty tatu tau taube taubes taunt taunts taupe taus taut tav tava taw tawa tawas tawny tax taxa taxation taxes taxi taxies taxis taxiway taxiways taxman taxon taxonomy tays tazza tea teak team teammate teapot teapots teas teat teatime teats tee teem teen teens teeny teepee teepees tees teeth temazepam teme temp tempeh tempi tempo tempt temptation ten tenant tenants tene tenement tenet tenets tennis tenno tenny tenon tenons tenpenny tenpin tens tent tentative tenth tents tenue tenuis tenuous tepee tepees tes tetanus tetany tete tew tex text textbook textbooks texts thae than thana thane thank that the thebe thee thein them thema theme then theophany theta thete they thiamin thiamine thin thine think thio thiophene tho thon thot thy thyme thymine tibia tibiae tie ties tik tika tike tikes tiki tikis tikka timbo time timebomb timon timpani tin tine tinea tines tinies tink tinman tinnitus tinny tinpot tins tint tints tintype tiny tip tipi tipis tippee tippet tippy tips tiptoe tiptoes tiptop tis tit titan titanate titania titanite titans titbit titbits tite tithe titi tits tittie titties titty tix tizzy toe toes toey toho toit tokamak toke token tokens tokes toko toman tomato tomb tomboy tome tomo tompion ton tone tones toney tonite tonk tonka tonks tonne tonneau tonnes tons tontine tonus too took toom toon toonie toons toot tooth toothy toots top topaz tope topes toph topi topknot topman topo toponym toponymy topos toppy tops tot tote totem totes tots totty toupee tout touts tow towboat towie town townie townies towns tows toxin toxins toy toyman toyo toys tuan tub tuba tubas tubby tube tubes tubs tui tuis tuition tuitions tun tuna tunas tune tunes tuneup tunny tuns tup tut tuts tutti tutu tutus tux tuxes twa twain twas twat twats tweak tweaks twee tween tweens tweet tweets twenties twenty twin twine twines twink twinkies twinks twins twit twits twixt two twopenny twos tyee tyke tykes tympani tynes type types typhoon typo typos tzatziki uke unai unban unbeaten unbeknown unbent unbox unbutton unbuttons uneaten uneven uni union unions unis unit unite unites unities unitive units unity unkept unknot unknown unknowns unobvious unpin uns untie unties unto upbeat upkeep upo upon uppity ups uptake uptakes uptown utes utis utopia utopian utopians utopias uts uvas uvea uveitis vae vain van vane vanes vanitas vanities vanity vans vant vape vapes vat vats vau vaunt vav vaw veena veep vees vein veins veiny vena venation venetians venous vent ventana vents venue venues vet veto vetoes vets vex vexation vexations vexatious vexes via vias vibe vibes vie vies view viewpoint viewpoints views vine vines vino vinous vins vint vitae vitas vite vitex vitiate viva vivas vivat vive vives vivo vixen vixens voe voip vote votes votive vow vows vox wab wabbit wae wain wais wait waites waits waive waives waka wake waken wakes wan wane wanes wank wanks wanky wanna wannabe wannabees wannabes wans want wanton wants wap wapentake wapiti waps was wate wats watt watts wave waves wavey wavy waw wawa wax waxen waxes waxy way waypoint waypoints ways weak weaken weakens wean weans weapon weapons weave weaves web webby webs wee week weeke weekes weeks ween weenie weenies weeny weep weeps weepy wees weet weka wen wens went wept wet weta wets wex wey wikis win wine wines wink winks winnow wino winos wins winy wipe wipeout wipes wit witan wite witney wits witty wive wives woe woes wok woke woken woks won wonk wonks wonky wons wont wonton wontons woo woon woops woos woot wop wops wos wot wots wove woven wow wowee wows wus wuxia wye wynns xanthan xanthate xanthine xenon xenophobe xenophobia xenotime xis yaba yabba yae yah yak yaks yam yamen yank yanks yap yapp yappy yaps yate yaw yawn yawns yawp yaws yay yea yeah yean yeas yeet yeh yen yens yeoman yeomen yep yes yet yeti yetis yett yew yews yikes yin yip yipes yippee yippie yips yob yobs yohimbine yok yoke yokes yom yon yoni yonks you yous yow yoyo yuan yuk yukata yuko yukos yup yuppie yuppies yuppy yus zakat zaman zamia zante zany zap zappy zax zazen zee zein zek zenana zenith zep zeta zin zine zinke zinnia zip zippo zippy zit ziti ziz zoa zombi zombie zona zonation zone zonk zoo zooey zoom zoon zoot";
+var COMMON_STR="abbas abbey abbot about above abs aha ahem aim akin amaze amazement amazon ambient ambition amen amin amino ammo ammonia amp anatomy anemia anew animate animation anime annex annexation annoy annoys annuities annuity anon anonymity ant ante antenna antennae antennas anthem anti ants anus anxieties anxiety anxious any anyone anytime anyway anyways apathy ape apes apex apnea app appetite appoint appointees appoints apps apt ate atom atonement atop attain attainment attempt attention attentive aunt auntie aunts aunty auto autos avant ave avenue avenues avian aviation await awaits awake awaken awakens away awe awoke axe axes axiom axis aye baba babe babes babies baby bae bah bait bake bam bamboo ban banana bananas bane bank banks bans bat bath bathe baton bats bay bayonet bayou bays beak beam bean beans beat beaten beats beau beauties beauty bee been beep bees beet beets beneath bennet bent bet beta bets between bey bhai bias bike bikes bikini bin bins bio bios bis bit bite bites bits bitten biz boa boat boats bob bohemian boi bois bomb bonanza bone bones bonnet bonus bony boo boob boobs book books boom boon boos boot booth boots booty booze bop bot botany both bots bottom bounty bout bouts bovine bow bows box boxes boy boys bubba bun bunk bunnies bunny buns buoy bus but butt butte button buttons butts buy buyout buys bye byte bytes eat eaten eats eau ebb ebony ebook ebooks embankment eminent emit emo emotion empathy empty enemy enmity entities entity envious envoy envy enzyme epiphany epitome epoxy eta eth eve even event events evo evoke evokes exam examine exempt exemption exes exhibit exhibition exit exits exo expat expo extant extent eye eyes habit habitat hah haha ham hap happen happy hat hate hath hay haze hazy heap heat heath heathen heh hem hemp hen hex hey hike him hint hip hippie hippo hippy hit hitman hiya hmm hoax hobbit hobby hobo hoe home homie homo homophobia hon hone honey honeymoon hoo hook hoop hop hope hot hottie hymn hype imam imitate imitation imminent imp impatient impotent inanimate inbox inept inhabit inhibit inhibition initiate initiates initiation initiative ink inks inmate inn innate innovate innovation innovative inns inpatient input inputs ins intake intent intention intentions intimate into intuition intuitive invent invention inventions inventive invitation invite invites invoke ion ionization ions item its ivy kaaba kappa kayak kebab keen keep keeps kemp ken kept keto key keynote keys khaki kin kink kinks kinky kip kit kite kits kitten kittens kitty kiwi knee knees knew knit knives knob knobs knot knots know known knows koi mahatma main maintain maize make mama mamma mammoth man mana mane mani mania many map mat mate math matte max maxi maxim maximize may maybe mayhem mayo maze mean meant meantime meat meaty meek meet meh mein meme memo men mention met meta meth methane mime mine mini minimize minion mink mint mite mitt mix mixtape moan moat mob mom moment momma mommy money monk monkey mono month moo moon moot mop moth motion motto myth nab nah naive nam name nan nana nanny nap napkin napkins naps nation nations native natives nativity nats nave navy nay neat neon net nets new newbie news newt newton next nexus nib nine nineteen nineteenth nineties ninety ninth nip nit nite nix nominate nomination nominee non none nook noon nope nos not notation note notebook notebooks notes notion notions noun nouns nouveau nova now nuke nukes nun nuns nut nuts nutty oak oaks oath oats obey obi obnoxious obtain obtains obvious ohm okay omen omit one ones onion onions onto oops open opens opinion opinions opponent opponents ops opt optimize option options opus ottoman out outpatient output outputs outs ova ovation oven ovens owe owes own owns ozone pain pains paint paints pan pane pans pant pantheon panties pantomime pants pap papa pas pat patent patents path patient patients patio pats patty pave paw pawn paws pax pay payment payout payouts pays pea peak peaks peanut peanuts peas peat pee peek peep peeps pen penis pennies penny pens pep pet petit petite petition petitions pets petty pew phantom phenomena phenomenon phenotype phi phobia phoenix phone phony photo photon piano piazza pie pies piety pike pimp pin pine pines pink pinky pinpoint pins pint pinto pints pious pip pipe pipes pit pita pits pity pivot pixie pizza poem poet poets point pointe points pointy poke pom ponies pony poo poop poopy pop pope popes poppy pops pot potato potatoes potent potion pots potty pow pox pub pubs puke pun punitive punk puns punt pup puppet puppets puppies puppy pups pus put puts putt pwn python tab taboo tabs take takeaway taken takes tam tame tan tank tanks tao tap tape tapes taps tat tattoo tattoos tau tax taxation taxes taxi taxis taxonomy tea team teammate teas tee teen teens teeny tees teeth temp tempo tempt temptation ten tenant tenants tenet tenets tennis tens tent tentative tenth tents tenuous tex text textbook textbooks texts than thank that the thee them theme then theta they thin thine think tho thot thy thyme tie ties tiki time tin tins tint tiny tip tips tis tit titan titans tits titties titty toe toes token tokens tomato tomb tome ton tone tones tonne tonnes tons too took toon toot tooth top tops tot tote totem tots tout tow town towns toxin toxins toy toys tub tube tubes tubs tuition tuna tune tunes tutu twain twas twat tweak tweaks tweet tweets twenties twenty twin twins two type types typhoon typo typos unbeaten uneven uni union unions unit unite unites units unity unknown unto upbeat upkeep upon ups uptake uptown utopia utopian vain van vane vanity vans vape vapes vat vein veins vent vents venue venues vet veto vets via vibe vibes vie view viewpoint viewpoints views vine vines viva vivo vote votes vow vows vox wait waits waive wake wakes wan wanna wannabe want wants was watt watts wave waves wavy wax way ways weak weaken weakens weapon weapons weave web webs wee week weeks weep wen went wept wet win wine wines wink wins wipe wipes wit wits witty wives woe woes woke woken won wont woo wot woven wow xenophobia yah yak yam yank yanks yawn yay yea yeah yeet yeh yen yep yes yet yeti yew yikes yin yoke you yuan yup zee zenith zeta zip zombie zone zoo zoom";
+</script>
+<script>
+(function () {
+  'use strict';
+  /*LOGIC-START*/
+  var CAPS = { a: 'Α', b: 'Β', e: 'Ε', h: 'Η', i: 'Ι', k: 'Κ', m: 'Μ', n: 'Ν', o: 'Ο', p: 'Ρ', t: 'Τ', x: 'Χ', y: 'Υ', z: 'Ζ' };
+  var LOW = { a: 'α', b: 'β', e: 'ε', i: 'ι', k: 'κ', n: 'η', o: 'ο', p: 'ρ', s: 'ς', t: 'τ', u: 'υ', v: 'ν', w: 'ω', x: 'χ', y: 'γ' };
+  // floor = the share of this mode's common words that every daily bin must be able to spell
+  var MODES = {
+    easy: { name: 'Easy', note: 'Capitals', glyphs: CAPS, size: 12, floor: 0.30 },
+    medium: { name: 'Medium', note: 'Lowercase', glyphs: LOW, size: 10, floor: 0.30, finalS: true },
+    hard: { name: 'Hard', note: 'Lowercase', glyphs: LOW, size: 8, floor: 0.15, finalS: true, hideLabels: true },
+    // five tiles, one of them (the centre) must appear in every word; using all five earns a bonus
+    keystone: { name: 'Keystone', note: 'Lowercase', glyphs: LOW, size: 6, centre: true, minLen: 4, pangram: 10, finalS: true, minWords: 25, maxVowels: 3 }
+  };
+  var VAL = { a: 2, e: 2, i: 2, n: 2, o: 2, s: 2, t: 2, u: 2, h: 4, m: 4, p: 4, b: 6, k: 6, v: 6, w: 6, y: 6, x: 10, z: 10 };
+  var MAX_LEN = 10;
+
+  function score(word) {
+    var seen = {}, s = 0;
+    for (var i = 0; i < word.length; i++) {
+      var ch = word[i];
+      s += seen[ch] ? VAL[ch] / 2 : VAL[ch];
+      seen[ch] = true;
+    }
+    return s;
+  }
+  function toGlyphs(word, glyphs) {
+    var out = '';
+    for (var i = 0; i < word.length; i++) out += glyphs[word[i]];
+    return out;
+  }
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function hashStr(s) {
+    var h = 2166136261 >>> 0;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function maskOf(letters) {
+    var m = 0;
+    for (var i = 0; i < letters.length; i++) m |= 1 << (letters[i].charCodeAt(0) - 97);
+    return m;
+  }
+  function fits(w, mask) {
+    for (var i = 0; i < w.length; i++) { if (!((mask >> (w.charCodeAt(i) - 97)) & 1)) return false; }
+    return true;
+  }
+  function combos(arr, k) {
+    var out = [];
+    (function rec(start, cur) {
+      if (cur.length === k) { out.push(cur.slice()); return; }
+      for (var i = start; i <= arr.length - (k - cur.length); i++) { cur.push(arr[i]); rec(i + 1, cur); cur.pop(); }
+    })(0, []);
+    return out;
+  }
+  // masks of the common words this mode's full letter set can spell at all
+  function commonMasks(key, common) {
+    var full = maskOf(Object.keys(MODES[key].glyphs).sort()), out = [];
+    for (var i = 0; i < common.length; i++) if (fits(common[i], full)) out.push(maskOf(common[i]));
+    return out;
+  }
+  function share(cm, bm) {
+    var n = 0;
+    for (var i = 0; i < cm.length; i++) if ((cm[i] & ~bm) === 0) n++;
+    return n;
+  }
+  // every bin that clears the floor, in a fixed shuffled order so days never repeat until the pool is used up
+  function buildPool(key, common) {
+    var mode = MODES[key], all = Object.keys(mode.glyphs).sort(), cm = commonMasks(key, common), scored = [];
+    combos(all, mode.size).forEach(function (c) { scored.push({ c: c, f: share(cm, maskOf(c)) / cm.length }); });
+    var pool = scored.filter(function (s) { return s.f >= mode.floor; });
+    if (pool.length < 30) { scored.sort(function (a, b) { return b.f - a.f; }); pool = scored.slice(0, 30); }
+    var rng = mulberry32(hashStr('pool:' + key));
+    for (var i = pool.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1)), t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+    }
+    return { pool: pool.map(function (s) { return s.c; }), cm: cm, all: all };
+  }
+  function pickBin(key, dayNo, dateKey, built) {
+    var c = built.pool[(dayNo - 1) % built.pool.length].slice();
+    var rng = mulberry32(hashStr(dateKey + '|' + key));
+    for (var i = c.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1)), t = c[i]; c[i] = c[j]; c[j] = t;
+    }
+    return c;
+  }
+  // Keystone: every (five letters, centre) pair with enough words and at least one common word that uses all five
+  function buildKeystonePool(valid, common) {
+    var mode = MODES.keystone, all = Object.keys(mode.glyphs).sort(), full = maskOf(all), cs = {}, ws = [];
+    common.forEach(function (w) { cs[w] = 1; });
+    valid.forEach(function (w) {
+      if (w.length >= mode.minLen && fits(w, full)) ws.push({ m: maskOf(w.split('')), c: !!cs[w] });
+    });
+    var pool = [];
+    combos(all, mode.size).forEach(function (c) {
+      if (c.filter(function (x) { return 'aeiou'.indexOf(x) >= 0; }).length > mode.maxVowels) return;
+      var cm = maskOf(c), n = {}, pang = 0, i, b;
+      for (i = 0; i < ws.length; i++) {
+        var w = ws[i];
+        if ((w.m & ~cm) !== 0) continue;
+        for (b = 0; b < 26; b++) if ((w.m >> b) & 1) n[b] = (n[b] || 0) + 1;
+        if (w.m === cm && w.c) pang++;
+      }
+      if (!pang) return;
+      c.forEach(function (ch) {
+        if (ch !== 's' && (n[ch.charCodeAt(0) - 97] || 0) >= mode.minWords) pool.push({ c: c, ctr: ch });
+      });
+    });
+    var rng = mulberry32(hashStr('pool:keystone'));
+    for (var k = pool.length - 1; k > 0; k--) {
+      var j = Math.floor(rng() * (k + 1)), t = pool[k]; pool[k] = pool[j]; pool[j] = t;
+    }
+    return pool;
+  }
+  // four outer tiles in a daily order, then the centre tile last
+  function pickKeystone(dayNo, dateKey, pool) {
+    var e = pool[(dayNo - 1) % pool.length];
+    var outer = e.c.filter(function (x) { return x !== e.ctr; });
+    var rng = mulberry32(hashStr(dateKey + '|keystone'));
+    for (var i = outer.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1)), t = outer[i]; outer[i] = outer[j]; outer[j] = t;
+    }
+    return outer.concat([e.ctr]);
+  }
+  /*LOGIC-END*/
+
+  var GREEK = [['α', 'Alpha'], ['β', 'Beta'], ['γ', 'Gamma'], ['δ', 'Delta'], ['ε', 'Epsilon'], ['ζ', 'Zeta'],
+    ['η', 'Eta'], ['θ', 'Theta'], ['ι', 'Iota'], ['κ', 'Kappa'], ['λ', 'Lambda'], ['μ', 'Mu'],
+    ['ν', 'Nu'], ['ξ', 'Xi'], ['ο', 'Omicron'], ['π', 'Pi'], ['ρ', 'Rho'], ['σ', 'Sigma'],
+    ['τ', 'Tau'], ['υ', 'Upsilon'], ['φ', 'Phi'], ['χ', 'Chi'], ['ψ', 'Psi'], ['ω', 'Omega']];
+  var NAMES = {
+    'Α': 'alpha', 'Β': 'beta', 'Ε': 'epsilon', 'Η': 'eta', 'Ι': 'iota', 'Κ': 'kappa', 'Μ': 'mu', 'Ν': 'nu', 'Ο': 'omicron', 'Ρ': 'rho', 'Τ': 'tau', 'Χ': 'chi', 'Υ': 'upsilon', 'Ζ': 'zeta',
+    'α': 'alpha', 'β': 'beta', 'ε': 'epsilon', 'ι': 'iota', 'κ': 'kappa', 'η': 'eta', 'ο': 'omicron', 'ρ': 'rho', 'ς': 'final sigma', 'τ': 'tau', 'υ': 'upsilon', 'ν': 'nu', 'ω': 'omega', 'χ': 'chi', 'γ': 'gamma'
+  };
+  var BEST_SHOWN = 10;
+
+  // points for a word in a given mode/bin (Keystone adds a bonus for using every tile)
+  function wordPts(w, key, mask) {
+    var p = score(w), b = MODES[key].pangram;
+    if (b && maskOf(w.split('')) === mask) p += b;
+    return p;
+  }
+  function pts(w) { return wordPts(w, cur.key, cur.mask); }
+  function minLenOf(key) { return MODES[key].minLen || 3; }
+
+  var VALID = VALID_STR.split(' ');
+  var COMMON = COMMON_STR.split(' ');
+
+  var now = new Date();
+  var Y = now.getFullYear(), M = now.getMonth(), D = now.getDate();
+  var dateKey = Y + '-' + String(M + 1).padStart(2, '0') + '-' + String(D).padStart(2, '0');
+  var dayNo = Math.max(1, Math.floor((Date.UTC(Y, M, D) - Date.UTC(2026, 8, 30)) / 86400000) + 1);
+
+  function $(id) { return document.getElementById(id); }
+  var composerEl = $('composer'), latinEl = $('latin'), wptsEl = $('wpts'), msgEl = $('msg'), rackEl = $('rack');
+  var foundEl = $('found'), foundEmptyEl = $('foundEmpty'), foundCountEl = $('foundCount'), totalCountEl = $('totalCount'), remainEl = $('remain');
+  var giveBtn = $('giveBtn'), submitBtn = $('submitBtn'), bestSec = $('bestSec'), bestEl = $('bestList');
+  var alphaEl = $('alpha'), rankGlyphEl = $('rankGlyph'), rankNameEl = $('rankName'), statsEl = $('stats');
+  var shareEl = $('shareText'), copyBtn = $('copyBtn'), copyNote = $('copyNote');
+
+  $('dayno').textContent = 'No. ' + dayNo;
+  $('daydate').textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+  var cache = {};
+  var cur = null;
+
+  function foundKey(key) { return 'gtm4:' + key + ':' + dateKey; }
+  function revealKey(key) { return 'gtm4:r:' + key + ':' + dateKey; }
+  function loadFound(key, possibleSet) {
+    try {
+      var saved = JSON.parse(localStorage.getItem(foundKey(key)) || '[]');
+      if (Array.isArray(saved)) return saved.filter(function (w) { return typeof w === 'string' && possibleSet.has(w); });
+    } catch (e) { /* storage unavailable */ }
+    return [];
+  }
+  function loadRevealed(key) {
+    try { return localStorage.getItem(revealKey(key)) === '1'; } catch (e) { return false; }
+  }
+  function persist() { try { localStorage.setItem(foundKey(cur.key), JSON.stringify(cur.found)); } catch (e) { /* storage unavailable */ } }
+
+  function stateFor(key) {
+    if (!cache[key]) {
+      var mode = MODES[key], bin, centre = null;
+      if (mode.centre) {
+        bin = pickKeystone(dayNo, dateKey, buildKeystonePool(VALID, COMMON));
+        centre = bin[bin.length - 1];
+      } else {
+        bin = pickBin(key, dayNo, dateKey, buildPool(key, COMMON));
+      }
+      var mask = maskOf(bin), need = minLenOf(key);
+      function ok(w) { return w.length >= need && fits(w, mask) && (!centre || w.indexOf(centre) >= 0); }
+      var possible = VALID.filter(ok)
+        .sort(function (a, b) { return wordPts(b, key, mask) - wordPts(a, key, mask) || (a < b ? -1 : 1); });
+      var possibleSet = new Set(possible);
+      var top = 0;
+      COMMON.forEach(function (w) { if (ok(w)) { var s = wordPts(w, key, mask); if (s > top) top = s; } });
+      if (!top && possible.length) top = wordPts(possible[0], key, mask);
+      cache[key] = {
+        key: key, bin: bin, centre: centre, mask: mask, possible: possible, possibleSet: possibleSet, top: Math.max(1, top),
+        minS: possible.length ? wordPts(possible[possible.length - 1], key, mask) : 0,
+        found: loadFound(key, possibleSet), word: [], revealed: loadRevealed(key)
+      };
+    }
+    return cache[key];
+  }
+  function glyphs() { return MODES[cur.key].glyphs; }
+
+  function say(text, kind) {
+    msgEl.textContent = text;
+    msgEl.className = 'msg' + (kind ? ' ' + kind : '');
+  }
+  function shake() {
+    composerEl.classList.remove('shake');
+    void composerEl.offsetWidth;
+    composerEl.classList.add('shake');
+  }
+  composerEl.addEventListener('animationend', function () { composerEl.classList.remove('shake'); });
+
+  function renderComposer() {
+    var g = glyphs(), h = '';
+    for (var i = 0; i < MAX_LEN; i++) {
+      var ch = cur.word[i];
+      h += ch === undefined ? '<div class="slot"></div>' : '<div class="slot on" lang="el">' + g[ch] + '</div>';
+    }
+    composerEl.innerHTML = h;
+    var w = cur.word.join('');
+    latinEl.textContent = w.toUpperCase();
+    latinEl.classList.toggle('empty', !w);
+    wptsEl.textContent = w ? '+' + pts(w) : '';
+  }
+
+  // Keystone: a disc for the required letter, ringed by wedges for the others
+  function polar(cx, cy, rad, ang) { return (cx + rad * Math.cos(ang)).toFixed(2) + ' ' + (cy + rad * Math.sin(ang)).toFixed(2); }
+  function wedgePath(a0, a1, r, R) {
+    var c = 150;
+    return 'M' + polar(c, c, R, a0) + ' A' + R + ' ' + R + ' 0 0 1 ' + polar(c, c, R, a1) +
+      ' L' + polar(c, c, r, a1) + ' A' + r + ' ' + r + ' 0 0 0 ' + polar(c, c, r, a0) + ' Z';
+  }
+  function buildDial() {
+    var mode = MODES[cur.key], g = glyphs(), n = cur.bin.length - 1, C = 150, R = 144, r = 58, rm = (R + r) / 2;
+    var svg = '<svg viewBox="0 0 300 300" role="presentation" focusable="false">';
+    function label(ch, x, y, extra) {
+      return '<text class="sl" x="' + x + '" y="' + y + '" text-anchor="middle">' + ch.toUpperCase() + (extra || '') + ' · ' + VAL[ch] + '</text>';
+    }
+    cur.bin.slice(0, n).forEach(function (ch, i) {
+      var step = Math.PI * 2 / n, mid = -Math.PI / 2 + i * step;
+      var tx = C + rm * Math.cos(mid), ty = C + rm * Math.sin(mid);
+      var end = mode.finalS && ch === 's';
+      svg += '<g class="seg" data-ch="' + ch + '" data-ctl tabindex="0" role="button" aria-label="' + ch.toUpperCase() + ', ' + NAMES[g[ch]] + ', ' + VAL[ch] + ' points' + (end ? ', word end only' : '') + '">' +
+        '<path d="' + wedgePath(mid - step / 2, mid + step / 2, r, R) + '"/>' +
+        '<text class="sg" x="' + tx.toFixed(1) + '" y="' + (ty + 4).toFixed(1) + '" text-anchor="middle" lang="el">' + g[ch] + '</text>' +
+        label(ch, tx.toFixed(1), (ty + 24).toFixed(1), end ? ' · end' : '') + '</g>';
+    });
+    var ck = cur.centre;
+    svg += '<g class="seg centre" data-ch="' + ck + '" data-ctl tabindex="0" role="button" aria-label="' + ck.toUpperCase() + ', ' + NAMES[g[ck]] + ', ' + VAL[ck] + ' points, centre tile, required in every word">' +
+      '<circle cx="' + C + '" cy="' + C + '" r="' + (r - 4) + '"/>' +
+      '<text class="sg" x="' + C + '" y="' + (C + 4) + '" text-anchor="middle" lang="el">' + g[ck] + '</text>' +
+      '<text class="sl" x="' + C + '" y="' + (C + 26) + '" text-anchor="middle">' + ck.toUpperCase() + ' · ' + VAL[ck] + ' · required</text></g>';
+    svg += '<circle class="rim" cx="' + C + '" cy="' + C + '" r="' + R + '"/><circle class="rim" cx="' + C + '" cy="' + C + '" r="' + r + '"/></svg>';
+    rackEl.innerHTML = svg;
+    Array.prototype.forEach.call(rackEl.querySelectorAll('.seg'), function (el) {
+      var ch = el.getAttribute('data-ch');
+      el.addEventListener('click', function (e) { addLetter(ch); if (e.detail > 0 && el.blur) el.blur(); });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); addLetter(ch); }
+      });
+    });
+  }
+
+  function buildRack() {
+    var mode = MODES[cur.key], g = glyphs();
+    rackEl.classList.toggle('nolabels', !!mode.hideLabels);
+    rackEl.classList.toggle('dial', !!mode.centre);
+    if (mode.centre) { buildDial(); return; }
+    rackEl.innerHTML = '';
+    cur.bin.forEach(function (ch) {
+      var end = mode.finalS && ch === 's';
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tile';
+      b.setAttribute('data-ctl', '');
+      b.setAttribute('aria-label', ch.toUpperCase() + ', ' + NAMES[g[ch]] + ', ' + VAL[ch] + ' points' + (end ? ', word end only' : ''));
+      b.innerHTML = '<span class="g" lang="el">' + g[ch] + '</span><span class="l">' + ch + (end ? ' · end' : '') + '</span><span class="p">' + VAL[ch] + '</span>';
+      b.addEventListener('click', function (e) { addLetter(ch); if (e.detail > 0) b.blur(); });
+      rackEl.appendChild(b);
+    });
+  }
+
+  function addLetter(ch) {
+    var mode = MODES[cur.key];
+    if (!mode.glyphs[ch]) {
+      say('No ' + (mode.finalS ? 'lowercase' : 'capital') + ' Greek letter looks like ' + (mode.finalS ? ch : ch.toUpperCase()) + '.', 'bad');
+      return;
+    }
+    if (cur.bin.indexOf(ch) < 0) { say(ch.toUpperCase() + ' is missing from today\'s bin.', 'bad'); return; }
+    if (mode.finalS && cur.word[cur.word.length - 1] === 's') { say('ς can only end a word. Delete it to keep going.', 'bad'); return; }
+    if (cur.word.length >= MAX_LEN) { say('Words stop at ' + MAX_LEN + ' letters.', 'bad'); return; }
+    cur.word.push(ch);
+    say('');
+    renderComposer();
+  }
+  function del() { if (cur.word.length) { cur.word.pop(); say(''); renderComposer(); } }
+  function clearWord() { cur.word = []; say(''); renderComposer(); }
+  function shuffle() {
+    var n = cur.centre ? cur.bin.length - 1 : cur.bin.length; // the centre tile stays put
+    for (var i = n - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = cur.bin[i]; cur.bin[i] = cur.bin[j]; cur.bin[j] = t;
+    }
+    buildRack();
+  }
+
+  function bestOf() {
+    var b = null;
+    cur.found.forEach(function (w) { var s = pts(w); if (!b || s > b.s || (s === b.s && w < b.w)) b = { w: w, s: s }; });
+    return b;
+  }
+  function submit() {
+    if (cur.revealed) { say('You gave up on this one. Come back tomorrow for a fresh bin.', 'bad'); return; }
+    var w = cur.word.join('');
+    var need = minLenOf(cur.key);
+    if (w.length < need) { say('Words need at least ' + need + ' letters.', 'bad'); shake(); return; }
+    if (cur.centre && w.indexOf(cur.centre) < 0) { say('Every word must use the centre tile, ' + cur.centre.toUpperCase() + '.', 'bad'); shake(); return; }
+    if (cur.found.indexOf(w) >= 0) { say('You already found ' + w.toUpperCase() + '.', 'bad'); shake(); return; }
+    if (!cur.possibleSet.has(w)) { say(w.toUpperCase() + ' is not in the word list.', 'bad'); shake(); return; }
+    var before = bestOf();
+    cur.found.push(w);
+    persist();
+    var got = pts(w);
+    cur.word = [];
+    say((!before || got > before.s ? 'New best: ' : '') + w.toUpperCase() + ' scores ' + got + (cur.centre && maskOf(w.split('')) === cur.mask ? ' (uses every tile, +' + MODES[cur.key].pangram + ')' : '') + '.', 'good');
+    renderComposer();
+    renderLedger();
+  }
+
+  var giveArmed = false, giveTimer = null;
+  function disarmGive() {
+    giveArmed = false;
+    clearTimeout(giveTimer);
+    giveBtn.textContent = 'Give up';
+  }
+  function giveUp() {
+    if (cur.revealed) return;
+    if (!giveArmed) {
+      giveArmed = true;
+      giveBtn.textContent = 'Tap again to reveal';
+      giveTimer = setTimeout(disarmGive, 4000);
+      return;
+    }
+    disarmGive();
+    cur.revealed = true;
+    try { localStorage.setItem(revealKey(cur.key), '1'); } catch (e) { /* storage unavailable */ }
+    say('Best words revealed. This bin is locked until tomorrow.');
+    renderLedger();
+  }
+
+  // Alpha: find any one of the five highest-scoring words in the bin, whatever else you have.
+  // Everyone else climbs by total points toward Beta, which needs about the twenty-five best words' worth.
+  function totalPts() { return cur.found.reduce(function (t, w) { return t + pts(w); }, 0); }
+  function targetPts() {
+    return Math.max(1, cur.possible.slice(0, 25).reduce(function (t, w) { return t + pts(w); }, 0));
+  }
+  function hasTopFive() {
+    var top = cur.possible.slice(0, 5);
+    return cur.found.some(function (w) { return top.indexOf(w) >= 0; });
+  }
+  function rankIndex(best) {
+    if (!best) return -1;
+    if (hasTopFive()) return 0;
+    var r = Math.pow(Math.min(1, totalPts() / targetPts()), 1.5);
+    return Math.max(1, Math.min(23, 23 - Math.floor(r * 22)));
+  }
+  function shareText(best, idx) {
+    var len = Math.min(MAX_LEN, best.w.length), blocks = '';
+    for (var i = 0; i < MAX_LEN; i++) blocks += i < len ? '🟦' : '⬜';
+    var pang = MODES[cur.key].pangram && cur.found.some(function (w) { return maskOf(w.split('')) === cur.mask; });
+    return 'It\'s all Greek to me No. ' + dayNo + '\n' + MODES[cur.key].name + ' · ' + GREEK[idx][0] + ' ' + GREEK[idx][1] + ' · ' + totalPts() + ' pts · ' +
+      cur.found.length + '/' + cur.possible.length + ' words' + (pang ? ' · every tile' : '') + (cur.revealed ? ' · gave up' : '') + '\n' + blocks;
+  }
+
+  function renderLedger() {
+    var g = glyphs();
+    var best = bestOf();
+    var idx = rankIndex(best);
+    var list = cur.found.slice().sort(function (a, b) { return pts(b) - pts(a) || (a < b ? -1 : 1); });
+    var total = cur.possible.length;
+    foundCountEl.textContent = cur.found.length;
+    totalCountEl.textContent = total;
+    remainEl.textContent = cur.revealed ? '· revealed, locked until tomorrow' : '';
+    foundEmptyEl.hidden = cur.found.length > 0;
+    foundEl.innerHTML = list.map(function (w, i) {
+      return '<li' + (i === 0 ? ' class="best"' : '') + '><span class="w">' + w + (i === 0 ? '<span class="tag">best</span>' : '') +
+        '</span><span class="gk" lang="el" aria-hidden="true">' + toGlyphs(w, g) + '</span><span class="pt">' + pts(w) + '</span></li>';
+    }).join('');
+    foundEmptyEl.textContent = 'No words yet. ' + (minLenOf(cur.key) === 4 ? 'Four' : 'Three') + ' letters is the minimum' + (cur.centre ? ', and every word needs the centre tile.' : '.');
+
+    giveBtn.hidden = cur.revealed;
+    submitBtn.disabled = cur.revealed;
+    bestSec.hidden = !cur.revealed;
+    if (cur.revealed) {
+      bestEl.innerHTML = cur.possible.slice(0, BEST_SHOWN).map(function (w) {
+        var mine = cur.found.indexOf(w) >= 0;
+        return '<li><span class="w">' + w + (mine ? '<span class="tag">yours</span>' : '') +
+          '</span><span class="gk" lang="el" aria-hidden="true">' + toGlyphs(w, g) + '</span><span class="pt">' + pts(w) + '</span></li>';
+      }).join('');
+    }
+
+    var a = '';
+    for (var i = 0; i < 24; i++) a += '<span class="' + (i >= idx && idx >= 0 ? 'on' : '') + (i === idx ? ' cur' : '') + '" lang="el">' + GREEK[i][0] + '</span>';
+    alphaEl.innerHTML = a;
+    if (best) {
+      rankGlyphEl.textContent = GREEK[idx][0];
+      rankNameEl.textContent = GREEK[idx][1] + ' (' + (idx + 1) + ' of 24)';
+      statsEl.innerHTML = 'Total <b>' + totalPts() + '</b> pts · best word <b>' + best.s + '</b>' + (idx === 1 ? ' · Alpha needs one of the 5 top words' : '');
+      shareEl.textContent = shareText(best, idx);
+      copyBtn.disabled = false;
+    } else {
+      rankGlyphEl.textContent = '·';
+      rankNameEl.textContent = 'Find a word to start climbing';
+      statsEl.innerHTML = 'Total <b>0</b> pts';
+      shareEl.textContent = 'Find a word and your result card appears here.';
+      copyBtn.disabled = true;
+    }
+    copyNote.textContent = '';
+  }
+
+  function setMode(key) {
+    disarmGive();
+    cur = stateFor(key);
+    var mode = MODES[key];
+    try { localStorage.setItem('gtm4:mode', key); } catch (e) { /* storage unavailable */ }
+    Array.prototype.forEach.call(document.querySelectorAll('.mode'), function (b) {
+      b.setAttribute('aria-pressed', b.dataset.mode === key ? 'true' : 'false');
+    });
+    buildRack();
+    renderComposer();
+    renderLedger();
+    say(cur.revealed ? 'You gave up on this one. Come back tomorrow for a fresh bin.' : (cur.centre ? 'Every word needs the centre letter, ' + cur.centre.toUpperCase() + '. Enter submits.' : 'Tap tiles or type on your keyboard. Enter submits.'));
+  }
+
+  function selectShare() {
+    var r = document.createRange();
+    r.selectNodeContents(shareEl);
+    var s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  }
+  function copyResult() {
+    var text = shareEl.textContent;
+    function fallback() { selectShare(); copyNote.textContent = 'Text selected. Press Ctrl+C or Cmd+C to copy.'; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { copyNote.textContent = 'Copied.'; }, fallback);
+    } else { fallback(); }
+  }
+
+  function wire(el, fn) {
+    el.addEventListener('click', function (e) { fn(); if (e.detail > 0) el.blur(); });
+  }
+  wire($('delBtn'), del);
+  wire($('clearBtn'), clearWord);
+  wire($('shuffleBtn'), shuffle);
+  wire(submitBtn, submit);
+  wire(copyBtn, copyResult);
+  wire(giveBtn, giveUp);
+  Array.prototype.forEach.call(document.querySelectorAll('.mode'), function (b) {
+    wire(b, function () { setMode(b.dataset.mode); });
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Enter') {
+      var a = document.activeElement;
+      if (a && a.closest && a.closest('[data-ctl]')) return;
+      e.preventDefault();
+      submit();
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      del();
+    } else if (e.key === 'Escape') {
+      clearWord();
+    } else if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
+      e.preventDefault();
+      addLetter(e.key.toLowerCase());
+    }
+  });
+
+  function mapLine(label, glyphMap, upper) {
+    var pairs = Object.keys(glyphMap).sort().map(function (ch) {
+      return '<span class="g" lang="el">' + glyphMap[ch] + '</span> ' + (upper ? ch.toUpperCase() : ch);
+    }).join(' · ');
+    var none = [];
+    for (var c = 97; c <= 122; c++) { var x = String.fromCharCode(c); if (!glyphMap[x]) none.push(upper ? x.toUpperCase() : x); }
+    return '<b>' + label + '</b> ' + pairs + '. No look-alike: ' + none.join(' ') + '.';
+  }
+  $('mapCaps').innerHTML = mapLine('Capitals', CAPS, true);
+  $('mapLow').innerHTML = mapLine('Lowercase', LOW, false);
+
+  var start = 'easy';
+  try { var lastMode = localStorage.getItem('gtm4:mode'); if (MODES[lastMode]) start = lastMode; } catch (e) { /* storage unavailable */ }
+  setMode(start);
+})();
+
+</script>
+
+
+
+</body></html>
