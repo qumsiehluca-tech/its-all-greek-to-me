@@ -269,7 +269,7 @@ h1 { margin: 0; font: 700 clamp(1.7rem, 5vw, 2.1rem)/1.15 var(--font-display); l
       <p>Letters are matched by how they look, not how they sound. Lowercase sigma is ς only at the end of a word, so S can only finish a word there. Capitals have no S.</p>
       <p class="map" id="mapCaps"></p>
       <p class="map" id="mapLow"></p>
-      <p>Points: A E I N O S T U score 2, H M P 4, B K V W Y 6, X and Z 10. A letter used again in the same word scores half. Your rank follows your total points, from Omega at the bottom up to Beta. Alpha is different: find any one of the five highest-scoring words in the bin and it's yours, whatever else you found.</p>
+      <p>Points: A E I N O S T U score 2, H M P 4, B K V W Y 6, X and Z 10. A letter used again in the same word scores half. Your rank follows your total points, from Omega at the bottom up to Beta. Alpha is different: first reach Beta, and have found any one of the five highest-scoring words in the bin. The order doesn't matter, but you can't skip Beta.</p>
       <p>Every daily bin can spell at least 30% of the common words its letters allow. Hard is 15%, because even the best 8 letters spell under 29%.</p>
       <p>Keystone has six tiles, never more than three of them vowels. The centre tile has to be in every word, words need four letters or more, and a word that uses all six tiles earns +10.</p>
     </div>
@@ -642,7 +642,7 @@ var COMMON_STR="abbas abbey abbot about above abs aha ahem aim akin amaze amazem
     renderLedger();
   }
 
-  // Alpha: find any one of the five highest-scoring words in the bin, whatever else you have.
+  // Alpha: find any one of the five highest-scoring words in the bin, but only once you have earned Beta (in either order).
   // Everyone else climbs by total points toward Beta, which needs about the twenty-five best words' worth.
   function totalPts() { return cur.found.reduce(function (t, w) { return t + pts(w); }, 0); }
   function targetPts() {
@@ -654,7 +654,7 @@ var COMMON_STR="abbas abbey abbot about above abs aha ahem aim akin amaze amazem
   }
   function rankIndex(best) {
     if (!best) return -1;
-    if (hasTopFive()) return 0;
+    if (hasTopFive() && totalPts() >= targetPts()) return 0;
     var r = Math.pow(Math.min(1, totalPts() / targetPts()), 1.5);
     return Math.max(1, Math.min(23, 23 - Math.floor(r * 22)));
   }
