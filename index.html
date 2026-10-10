@@ -783,7 +783,7 @@ var COMMON_STR="abbas abbey abbot about above abs aha ahem aim akin amaze amazem
   $('mapCaps').innerHTML = mapLine('Capitals', CAPS, true);
   $('mapLow').innerHTML = mapLine('Lowercase', LOW, false);
 
-  var start = 'easy';
+  var start = 'medium';
   try { var lastMode = localStorage.getItem('gtm4:mode'); if (MODES[lastMode]) start = lastMode; } catch (e) { /* storage unavailable */ }
   setMode(start);
 })();
